@@ -47,6 +47,24 @@ export function normalizeModel(model: string | undefined): string {
 	const normalized = modelId.toLowerCase();
 
 	// Priority order for pattern matching (most specific first):
+	// 0. GPT-5.6 family (current ChatGPT Codex backend)
+	if (normalized.includes("gpt-5.6")) {
+		return "gpt-5.6";
+	}
+
+	// 0b. GPT-5.5 family
+	if (normalized.includes("gpt-5.5")) {
+		return "gpt-5.5";
+	}
+
+	// 0c. GPT-5.4 family
+	if (normalized.includes("gpt-5.4-mini")) {
+		return "gpt-5.4-mini";
+	}
+	if (normalized.includes("gpt-5.4")) {
+		return "gpt-5.4";
+	}
+
 	// 1. GPT-5.2 Codex (newest codex model)
 	if (
 		normalized.includes("gpt-5.2-codex") ||

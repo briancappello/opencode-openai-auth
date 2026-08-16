@@ -12,9 +12,49 @@
  * Value: The normalized model name to send to the API
  */
 export const MODEL_MAP: Record<string, string> = {
-// ============================================================================
-// GPT-5.1 Codex Models
-// ============================================================================
+	// ============================================================================
+	// GPT-5.6 Models (current ChatGPT Codex backend)
+	// ============================================================================
+	"gpt-5.6-luna": "gpt-5.6-luna",
+	"gpt-5.6-terra": "gpt-5.6-terra",
+	"gpt-5.6-sol": "gpt-5.6-sol",
+	"gpt-5.6-luna-low": "gpt-5.6-luna",
+	"gpt-5.6-luna-medium": "gpt-5.6-luna",
+	"gpt-5.6-luna-high": "gpt-5.6-luna",
+	"gpt-5.6-luna-xhigh": "gpt-5.6-luna",
+	"gpt-5.6-terra-low": "gpt-5.6-terra",
+	"gpt-5.6-terra-medium": "gpt-5.6-terra",
+	"gpt-5.6-terra-high": "gpt-5.6-terra",
+	"gpt-5.6-terra-xhigh": "gpt-5.6-terra",
+	"gpt-5.6-sol-low": "gpt-5.6-sol",
+	"gpt-5.6-sol-medium": "gpt-5.6-sol",
+	"gpt-5.6-sol-high": "gpt-5.6-sol",
+	"gpt-5.6-sol-xhigh": "gpt-5.6-sol",
+
+	// ============================================================================
+	// GPT-5.5 Models
+	// ============================================================================
+	"gpt-5.5": "gpt-5.5",
+	"gpt-5.5-low": "gpt-5.5",
+	"gpt-5.5-medium": "gpt-5.5",
+	"gpt-5.5-high": "gpt-5.5",
+	"gpt-5.5-xhigh": "gpt-5.5",
+
+	// ============================================================================
+	// GPT-5.4 Models
+	// ============================================================================
+	"gpt-5.4": "gpt-5.4",
+	"gpt-5.4-low": "gpt-5.4",
+	"gpt-5.4-medium": "gpt-5.4",
+	"gpt-5.4-high": "gpt-5.4",
+	"gpt-5.4-mini": "gpt-5.4-mini",
+	"gpt-5.4-mini-low": "gpt-5.4-mini",
+	"gpt-5.4-mini-medium": "gpt-5.4-mini",
+	"gpt-5.4-mini-high": "gpt-5.4-mini",
+
+	// ============================================================================
+	// GPT-5.1 Codex Models
+	// ============================================================================
 	"gpt-5.1-codex": "gpt-5.1-codex",
 	"gpt-5.1-codex-low": "gpt-5.1-codex",
 	"gpt-5.1-codex-medium": "gpt-5.1-codex",
