@@ -3,6 +3,12 @@ import { getModelFamily } from "../lib/prompts/codex.js";
 
 describe("Codex Module", () => {
 	describe("getModelFamily", () => {
+		describe("GPT-6 family", () => {
+			it("should return gpt-6 for gpt-6-astra", () => {
+				expect(getModelFamily("gpt-6-astra")).toBe("gpt-6");
+			});
+		});
+
 		describe("GPT-5.2 Codex family", () => {
 			it("should return gpt-5.2-codex for gpt-5.2-codex", () => {
 				expect(getModelFamily("gpt-5.2-codex")).toBe("gpt-5.2-codex");

@@ -15,6 +15,38 @@ import { CODEX_OPENCODE_BRIDGE } from '../lib/prompts/codex-opencode-bridge.js';
 import type { RequestBody, UserConfig, InputItem } from '../lib/types.js';
 
 describe('Request Transformer Module', () => {
+	it.each([
+		'gpt-6-astra', 'gpt-5.6-luna', 'gpt-5.6-terra', 'gpt-5.6-sol',
+		'gpt-5.5', 'gpt-5.4', 'gpt-5.4-mini',
+	])('preserves xhigh through body and legacy options for %s', async (model) => {
+		const modern = await transformRequestBody(
+			{ model, reasoning: { effort: 'xhigh' } }, 'test', undefined, false,
+		);
+		const legacy = await transformRequestBody(
+			{ model: `${model}-xhigh` }, 'test',
+			{ global: {}, models: { [`${model}-xhigh`]: { options: { reasoningEffort: 'xhigh' } } } }, false,
+		);
+		expect(modern.reasoning?.effort).toBe('xhigh');
+		expect(legacy.reasoning?.effort).toBe('xhigh');
+	});
+
+	it.each([
+		'gpt-5.6-luna', 'gpt-5.6-terra', 'gpt-5.6-sol', 'gpt-5.5', 'gpt-5.4', 'gpt-5.4-mini',
+	])('preserves none reasoning for %s', async (model) => {
+		const result = await transformRequestBody(
+			{ model, reasoning: { effort: 'none' } }, 'test', undefined, false,
+		);
+		expect(result.reasoning?.effort).toBe('none');
+	});
+
+	it.each([
+		['gpt-6-astra', 'medium'], ['gpt-5.6-luna', 'medium'],
+		['gpt-5.5', 'medium'], ['gpt-5.4-mini', 'low'],
+	])('preserves the default effort for %s', async (model, effort) => {
+		const result = await transformRequestBody({ model }, 'test', undefined, false);
+		expect(result.reasoning?.effort).toBe(effort);
+	});
+
 	describe('normalizeModel', () => {
 		// NOTE: All gpt-5 models now normalize to gpt-5.1 as gpt-5 is being phased out
 		it('should normalize gpt-5-codex to gpt-5.1-codex', async () => {
@@ -46,6 +78,15 @@ describe('Request Transformer Module', () => {
 
 		// Codex CLI preset name tests - legacy gpt-5 models now map to gpt-5.1
 		describe('Codex CLI preset names', () => {
+			it('should preserve the supported gpt-6-astra backend model', async () => {
+				expect(normalizeModel('gpt-6-astra')).toBe('gpt-6-astra');
+				expect(normalizeModel('openai/gpt-6-astra')).toBe('gpt-6-astra');
+				expect(normalizeModel('gpt-6-astra-low')).toBe('gpt-6-astra');
+				expect(normalizeModel('gpt-6-astra-medium')).toBe('gpt-6-astra');
+				expect(normalizeModel('gpt-6-astra-high')).toBe('gpt-6-astra');
+				expect(normalizeModel('gpt-6-astra-xhigh')).toBe('gpt-6-astra');
+			});
+
 			it('should normalize all gpt-5-codex presets to gpt-5.1-codex', async () => {
 				expect(normalizeModel('gpt-5-codex-low')).toBe('gpt-5.1-codex');
 				expect(normalizeModel('gpt-5-codex-medium')).toBe('gpt-5.1-codex');

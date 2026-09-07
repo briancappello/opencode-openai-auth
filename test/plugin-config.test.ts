@@ -1,5 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { loadPluginConfig, getCodexMode } from '../lib/config.js';
+import { OpenAIAuthPlugin } from '../index.js';
+import modernConfig from '../config/opencode-modern.json';
 import type { PluginConfig } from '../lib/types.js';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
@@ -159,5 +161,30 @@ describe('Plugin Configuration', () => {
 			// Test 3: default when neither set
 			expect(getCodexMode({})).toBe(true);
 		});
+	});
+
+	it('registers GPT-6 Astra in the OpenCode model catalog', async () => {
+		const hooks = await OpenAIAuthPlugin({} as any);
+		const config: any = {};
+
+		await hooks.config?.(config);
+
+		expect(config.provider.openai.models['gpt-6-astra']).toMatchObject({
+			name: 'GPT 6 Astra (OAuth)',
+			limit: { context: 1050000, output: 128000 },
+			reasoning: true,
+			variants: modernConfig.provider.openai.models['gpt-6-astra'].variants,
+		});
+	});
+
+	it('preserves an existing Astra model configuration', async () => {
+		const hooks = await OpenAIAuthPlugin({} as any);
+		const model = { name: 'Custom Astra', options: { reasoningEffort: 'low' } };
+		const config = { provider: { openai: { models: { 'gpt-6-astra': model } } } };
+
+		await hooks.config?.(config);
+
+		expect(config.provider.openai.models['gpt-6-astra']).toBe(model);
+		expect(model).toEqual({ name: 'Custom Astra', options: { reasoningEffort: 'low' } });
 	});
 });

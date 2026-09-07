@@ -12,6 +12,12 @@
  * Value: The normalized model name to send to the API
  */
 export const MODEL_MAP: Record<string, string> = {
+	"gpt-6-astra": "gpt-6-astra",
+	"gpt-6-astra-low": "gpt-6-astra",
+	"gpt-6-astra-medium": "gpt-6-astra",
+	"gpt-6-astra-high": "gpt-6-astra",
+	"gpt-6-astra-xhigh": "gpt-6-astra",
+
 	// ============================================================================
 	// GPT-5.6 Models (current ChatGPT Codex backend)
 	// ============================================================================

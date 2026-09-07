@@ -1,8 +1,20 @@
 import { describe, it, expect } from 'vitest';
 import { getModelConfig, getReasoningConfig } from '../lib/request/request-transformer.js';
 import type { UserConfig } from '../lib/types.js';
+import modernConfig from '../config/opencode-modern.json';
+import legacyConfig from '../config/opencode-legacy.json';
 
 describe('Configuration Parsing', () => {
+	it.each([
+		['modern', modernConfig],
+		['legacy', legacyConfig],
+	])('uses model-specific context limits in the %s template', (_name, config) => {
+		for (const [id, model] of Object.entries(config.provider.openai.models)) {
+			const context = /^gpt-(5\.[12]|5\.4-mini)(-|$)/.test(id) ? 400000 : 1050000;
+			expect(model.limit, id).toEqual({ context, output: 128000 });
+		}
+	});
+
 	const providerConfig = {
 		options: {
 			reasoningEffort: 'medium' as const,

@@ -243,23 +243,20 @@ export function getReasoningConfig(
 		!isCodexMax &&
 		!isCodexMini;
 
-	// GPT 5.2, GPT 5.2 Codex, and Codex Max support xhigh reasoning
-	const supportsXhigh = isGpt52General || isGpt52Codex || isCodexMax;
-
-	// GPT 5.1 general and GPT 5.2 general support "none" reasoning per:
-	// - OpenAI API docs: "gpt-5.1 defaults to none, supports: none, low, medium, high"
-	// - Codex CLI: ReasoningEffort enum includes None variant (codex-rs/protocol/src/openai_models.rs)
-	// - Codex CLI: docs/config.md lists "none" as valid for model_reasoning_effort
-	// - gpt-5.2 (being newer) also supports: none, low, medium, high, xhigh
-	// - Codex models (including GPT-5.2 Codex) do NOT support "none"
-	const supportsNone = isGpt52General || isGpt51General;
+	const isRecentGpt5General =
+		/gpt[- ]5\.[456](?:[- ]|$)/.test(normalizedName) && !isCodex && !isCodexMini;
+	const isAstra = /gpt[- ]6[- ]astra(?:[- ]|$)/.test(normalizedName);
+	const supportsXhigh =
+		isGpt52General || isGpt52Codex || isCodexMax || isRecentGpt5General || isAstra;
+	// Astra and Codex models require reasoning; newer general GPT-5 models allow none.
+	const supportsNone = isGpt52General || isGpt51General || isRecentGpt5General;
 
 	// Default based on model type (Codex CLI defaults)
 	// Note: OpenAI docs say gpt-5.1 defaults to "none", but we default to "medium"
 	// for better coding assistance unless user explicitly requests "none"
 	const defaultEffort: ReasoningConfig["effort"] = isCodexMini
 		? "medium"
-		: supportsXhigh
+		: isGpt52General || isGpt52Codex || isCodexMax
 			? "high"
 			: isLightweight
 				? "minimal"
@@ -286,7 +283,6 @@ export function getReasoningConfig(
 	}
 
 	// For models that don't support "none", upgrade to "low"
-	// (Codex models don't support "none" - only GPT-5.1 and GPT-5.2 general purpose do)
 	if (!supportsNone && effort === "none") {
 		effort = "low";
 	}

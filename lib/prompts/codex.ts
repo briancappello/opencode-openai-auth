@@ -18,6 +18,7 @@ const __dirname = dirname(__filename);
  * Maps to different system prompts in the Codex CLI
  */
 export type ModelFamily =
+	| "gpt-6"
 	| "gpt-5.6"
 	| "gpt-5.5"
 	| "gpt-5.4"
@@ -32,6 +33,7 @@ export type ModelFamily =
  * Based on codex-rs/core/src/model_family.rs logic
  */
 const PROMPT_FILES: Record<ModelFamily, string> = {
+	"gpt-6": "gpt_5_1_prompt.md",
 	"gpt-5.6": "gpt_5_1_prompt.md",
 	"gpt-5.5": "gpt_5_1_prompt.md",
 	"gpt-5.4": "gpt_5_1_prompt.md",
@@ -46,6 +48,7 @@ const PROMPT_FILES: Record<ModelFamily, string> = {
  * Cache file mapping for each model family
  */
 const CACHE_FILES: Record<ModelFamily, string> = {
+	"gpt-6": "gpt-5.1-instructions.md",
 	"gpt-5.6": "gpt-5.1-instructions.md",
 	"gpt-5.5": "gpt-5.1-instructions.md",
 	"gpt-5.4": "gpt-5.1-instructions.md",
@@ -63,6 +66,9 @@ const CACHE_FILES: Record<ModelFamily, string> = {
  */
 export function getModelFamily(normalizedModel: string): ModelFamily {
 	// Order matters - check more specific patterns first
+	if (normalizedModel.includes("gpt-6") || normalizedModel.includes("gpt 6")) {
+		return "gpt-6";
+	}
 	if (
 		normalizedModel.includes("gpt-5.2-codex") ||
 		normalizedModel.includes("gpt 5.2 codex")

@@ -93,6 +93,25 @@ export const OpenAIAuthPlugin: Plugin = async ({ client }: PluginInput) => {
 		},
 	});
 	return {
+		config: async (config) => {
+			const provider = (config.provider ??= {});
+			const openai = (provider.openai ??= {});
+			const models = (openai.models ??= {});
+			const astra = {
+				name: "GPT 6 Astra (OAuth)",
+				reasoning: true,
+				limit: { context: 1050000, output: 128000 },
+				modalities: { input: ["text", "image"], output: ["text"] },
+				variants: Object.fromEntries(
+					["low", "medium", "high", "xhigh"].map((effort) => [effort, {
+						reasoningEffort: effort,
+						reasoningSummary: effort === "low" || effort === "medium" ? "auto" : "detailed",
+						textVerbosity: effort === "low" ? "low" : "medium",
+					}]),
+				),
+			} satisfies (typeof models)[string] & { variants: Record<string, unknown> };
+			models["gpt-6-astra"] ??= astra;
+		},
 		auth: {
 			provider: PROVIDER_ID,
 			/**
