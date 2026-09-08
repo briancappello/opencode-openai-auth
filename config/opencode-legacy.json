@@ -15,6 +15,20 @@
         "store": false
       },
       "models": {
+        "gpt-6-astra-fast": {
+          "name": "GPT 6 Astra Fast (OAuth)",
+          "limit": {
+            "context": 1050000,
+            "output": 128000
+          },
+          "modalities": {
+            "input": ["text", "image"],
+            "output": ["text"]
+          },
+          "options": {
+            "serviceTier": "priority"
+          }
+        },
         "gpt-6-astra-low": {
           "name": "GPT 6 Astra Low (OAuth)",
           "limit": {

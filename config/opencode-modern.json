@@ -51,6 +51,9 @@
               "reasoningEffort": "xhigh",
               "reasoningSummary": "detailed",
               "textVerbosity": "medium"
+            },
+            "fast": {
+              "serviceTier": "priority"
             }
           }
         },

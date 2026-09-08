@@ -28,7 +28,7 @@
     "url": "https://github.com/numman-ali/opencode-openai-codex-auth/issues"
   },
   "scripts": {
-    "build": "tsc && cp lib/oauth-success.html dist/lib/",
+    "build": "tsc && cp lib/oauth-success.html dist/lib/ && cp lib/prompts/codex-instructions.md lib/prompts/gpt-6-astra-instructions.md dist/lib/prompts/",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -53,6 +53,7 @@
     "@opencode-ai/plugin": "^1.0.150"
   },
   "devDependencies": {
+    "@ai-sdk/openai": "2.0.71",
     "@opencode-ai/plugin": "^1.0.150",
     "@opencode-ai/sdk": "^1.0.150",
     "@types/node": "^24.6.2",

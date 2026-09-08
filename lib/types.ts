@@ -26,12 +26,13 @@ export interface UserConfig {
 }
 
 /**
- * Configuration options for reasoning and text settings
+ * Configuration options for reasoning, text, and service tier
  */
 export interface ConfigOptions {
 	reasoningEffort?: "none" | "minimal" | "low" | "medium" | "high" | "xhigh";
 	reasoningSummary?: "auto" | "concise" | "detailed" | "off" | "on";
 	textVerbosity?: "low" | "medium" | "high";
+	serviceTier?: "auto" | "default" | "flex" | "priority" | "fast";
 	include?: string[];
 }
 
@@ -128,6 +129,7 @@ export interface RequestBody {
 	model: string;
 	store?: boolean;
 	stream?: boolean;
+	service_tier?: ConfigOptions["serviceTier"];
 	instructions?: string;
 	input?: InputItem[];
 	tools?: unknown;

@@ -43,6 +43,7 @@ npx -y opencode-openai-codex-auth@latest --uninstall --all
 ```
 ---
 ## 📦 Models
+- **gpt-6-astra** (low/medium/high/xhigh, opt-in Fast service tier)
 - **gpt-5.2** (none/low/medium/high/xhigh)
 - **gpt-5.2-codex** (low/medium/high/xhigh)
 - **gpt-5.1-codex-max** (low/medium/high/xhigh)
@@ -55,6 +56,13 @@ npx -y opencode-openai-codex-auth@latest --uninstall --all
 - Legacy (OpenCode v1.0.209 and below): `config/opencode-legacy.json`
 
 Minimal configs are not supported for GPT‑5.x; use the full configs above.
+
+Astra includes an opt-in `fast` variant. It sends `service_tier: "priority"` and consumes more usage.
+Standard service remains the default. The service tier does not change reasoning effort.
+You can also set `serviceTier: "priority"` in model `options` or a custom variant.
+See [service tier configuration](docs/configuration.md#servicetier) for precedence and examples.
+
+Astra uses OpenAI's published GPT-6 instructions, with a dedicated cache and bundled offline fallback.
 ---
 ## ✅ Features
 - ChatGPT Plus/Pro OAuth authentication (official flow)

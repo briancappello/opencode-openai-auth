@@ -33,7 +33,7 @@ export type ModelFamily =
  * Based on codex-rs/core/src/model_family.rs logic
  */
 const PROMPT_FILES: Record<ModelFamily, string> = {
-	"gpt-6": "gpt_5_1_prompt.md",
+	"gpt-6": "../models-manager/models.json",
 	"gpt-5.6": "gpt_5_1_prompt.md",
 	"gpt-5.5": "gpt_5_1_prompt.md",
 	"gpt-5.4": "gpt_5_1_prompt.md",
@@ -48,7 +48,7 @@ const PROMPT_FILES: Record<ModelFamily, string> = {
  * Cache file mapping for each model family
  */
 const CACHE_FILES: Record<ModelFamily, string> = {
-	"gpt-6": "gpt-5.1-instructions.md",
+	"gpt-6": "gpt-6-astra-instructions.md",
 	"gpt-5.6": "gpt-5.1-instructions.md",
 	"gpt-5.5": "gpt-5.1-instructions.md",
 	"gpt-5.4": "gpt-5.1-instructions.md",
@@ -188,7 +188,10 @@ export async function getCodexInstructions(
 
 		// Get the latest release tag (only if cache is stale or missing)
 		const latestTag = await getLatestReleaseTag();
-		const CODEX_INSTRUCTIONS_URL = `https://raw.githubusercontent.com/openai/codex/${latestTag}/codex-rs/core/${promptFile}`;
+		const CODEX_INSTRUCTIONS_URL = new URL(
+			promptFile,
+			`https://raw.githubusercontent.com/openai/codex/${latestTag}/codex-rs/core/`,
+		).href;
 
 		// If tag changed, we need to fetch new instructions
 		if (cachedTag !== latestTag) {
@@ -197,7 +200,7 @@ export async function getCodexInstructions(
 
 		// Make conditional request with If-None-Match header
 		const headers: Record<string, string> = {};
-		if (cachedETag) {
+		if (cachedETag && existsSync(cacheFile)) {
 			headers["If-None-Match"] = cachedETag;
 		}
 
@@ -206,14 +209,43 @@ export async function getCodexInstructions(
 		// 304 Not Modified - our cached version is still current
 		if (response.status === 304) {
 			if (existsSync(cacheFile)) {
+				writeFileSync(
+					cacheMetaFile,
+					JSON.stringify({
+						etag: cachedETag,
+						tag: latestTag,
+						lastChecked: Date.now(),
+						url: CODEX_INSTRUCTIONS_URL,
+					} satisfies CacheMetadata),
+					"utf8",
+				);
 				return readFileSync(cacheFile, "utf8");
 			}
-			// Cache file missing but GitHub says not modified - fall through to re-fetch
+			// Cache file missing - fall through to error handling and bundled fallback.
 		}
 
 		// 200 OK - new content or first fetch
 		if (response.ok) {
-			const instructions = await response.text();
+			let instructions = await response.text();
+			if (modelFamily === "gpt-6") {
+				const catalog = JSON.parse(instructions);
+				const messages = Array.isArray(catalog?.models)
+					? catalog.models.find((model: unknown) =>
+						model !== null && typeof model === "object" &&
+						"slug" in model && model.slug === "gpt-6-astra",
+					)?.model_messages
+					: undefined;
+				const template = messages?.instructions_template;
+				// Only accept a complete template, not one requiring variable expansion.
+				if (
+					typeof template !== "string" || !template.trim() ||
+					messages.instructions_variables !== null ||
+					/(?<!\{)\{[a-z_][a-z_0-9]*\}(?!\})/i.test(template)
+				) {
+					throw new Error("Missing or unresolved Astra instructions in model catalog");
+				}
+				instructions = template;
+			}
 			const newETag = response.headers.get("etag");
 
 			// Create cache directory if it doesn't exist
@@ -253,11 +285,15 @@ export async function getCodexInstructions(
 			return readFileSync(cacheFile, "utf8");
 		}
 
-		// Fall back to bundled version (use codex-instructions.md as default)
+		// Astra bundle is verbatim model_messages.instructions_template (variables null)
+		// from openai/codex c977cc0c19e704aa60e6c9b85107869f87b8b46f,
+		// codex-rs/models-manager/models.json, slug gpt-6-astra.
+		// Legacy bundle: openai/codex rust-v0.153.4, codex-rs/core/gpt_5_codex_prompt.md.
 		console.error(
 			`[openai-codex-plugin] Falling back to bundled instructions for ${modelFamily}`,
 		);
-		return readFileSync(join(__dirname, "codex-instructions.md"), "utf8");
+		return readFileSync(join(__dirname, modelFamily === "gpt-6"
+			? "gpt-6-astra-instructions.md" : "codex-instructions.md"), "utf8");
 	}
 }
 

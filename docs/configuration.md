@@ -42,6 +42,56 @@ Complete reference for configuring the OpenCode OpenAI Codex Auth Plugin.
 
 ## Configuration Options
 
+### serviceTier
+
+The service tier is independent of `reasoningEffort`. Fast remains off unless you select it.
+
+- `priority`: Fast service. OpenAI describes this tier as faster with increased usage.
+- `fast`: Alias for `priority`.
+- `default`: Standard service. The plugin omits `service_tier`, as Codex does, even if a lower-priority configuration requests Fast.
+- `auto` and `flex`: Pass through to the backend. Availability depends on the model and account.
+
+Precedence is the request's `service_tier`, then `providerOptions.openai.serviceTier`, then model `options`, then global `options`.
+An absent tier uses standard service. Invalid values also use standard service, with a warning when plugin debug logging is enabled.
+
+The OAuth plugin preserves tier and reasoning selections before SDK serialization, including older SDK versions that discard options for unknown models.
+It removes its private metadata before the backend request and leaves API-key requests unchanged.
+
+The modern preset and automatic Astra registration include a `fast` variant with `serviceTier: "priority"`.
+The legacy preset includes `gpt-6-astra-fast`, which maps to the backend model `gpt-6-astra`.
+The legacy name alone does not select a service tier; its preset `options` supply the tier.
+
+For Fast with high reasoning, add this variant to your existing Astra configuration:
+
+```json
+{
+  "provider": {
+    "openai": {
+      "models": {
+        "gpt-6-astra": {
+          "variants": {
+            "high-fast": {
+              "reasoningEffort": "high",
+              "serviceTier": "priority"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+After you install the rebuilt plugin or change configuration, quit and restart OpenCode.
+
+### Astra Instructions
+
+The plugin extracts Astra's instructions from `codex-rs/models-manager/models.json` in the latest OpenAI Codex release.
+It selects `gpt-6-astra` and uses `model_messages.instructions_template`, not the GPT-5.1 prompt.
+The dedicated cache is `~/.opencode/cache/gpt-6-astra-instructions.md`, with a 15-minute freshness interval and ETag checks.
+If retrieval fails or the template is invalid, the plugin uses cached Astra instructions or the bundled official Astra prompt.
+The build includes the bundled prompt, so first use without GitHub access does not require a previous cache.
+
 ### reasoningEffort
 
 Controls computational effort for reasoning.

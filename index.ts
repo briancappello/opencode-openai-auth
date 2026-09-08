@@ -75,6 +75,8 @@ import type { UserConfig } from "./lib/types.js";
  * ```
  */
 export const OpenAIAuthPlugin: Plugin = async ({ client }: PluginInput) => {
+	let oauthTransportActive = false;
+	const optionsMetadataKey = "_opencode_codex_options";
 	const buildManualOAuthFlow = (pkce: { verifier: string }, url: string) => ({
 		url,
 		method: "code" as const,
@@ -93,6 +95,21 @@ export const OpenAIAuthPlugin: Plugin = async ({ client }: PluginInput) => {
 		},
 	});
 	return {
+		"chat.params": async (input, output) => {
+			if (!oauthTransportActive || input.model.providerID !== PROVIDER_ID) return;
+			const { serviceTier, reasoningEffort, reasoningSummary } = output.options;
+			if (serviceTier === undefined && reasoningEffort === undefined && reasoningSummary === undefined) return;
+			const metadata = output.options.metadata;
+			if (metadata != null && (typeof metadata !== "object" || Array.isArray(metadata))) {
+				throw new Error("OpenAI metadata must be an object");
+			}
+			// Older AI SDK versions strip options for unknown models. Carry them per request.
+			output.options.metadata = {
+				...metadata,
+				[optionsMetadataKey]: JSON.stringify({ serviceTier, reasoningEffort, reasoningSummary }),
+			};
+			delete output.options.serviceTier;
+		},
 		config: async (config) => {
 			const provider = (config.provider ??= {});
 			const openai = (provider.openai ??= {});
@@ -102,13 +119,16 @@ export const OpenAIAuthPlugin: Plugin = async ({ client }: PluginInput) => {
 				reasoning: true,
 				limit: { context: 1050000, output: 128000 },
 				modalities: { input: ["text", "image"], output: ["text"] },
-				variants: Object.fromEntries(
-					["low", "medium", "high", "xhigh"].map((effort) => [effort, {
-						reasoningEffort: effort,
-						reasoningSummary: effort === "low" || effort === "medium" ? "auto" : "detailed",
-						textVerbosity: effort === "low" ? "low" : "medium",
-					}]),
-				),
+				variants: {
+					...Object.fromEntries(
+						["low", "medium", "high", "xhigh"].map((effort) => [effort, {
+							reasoningEffort: effort,
+							reasoningSummary: effort === "low" || effort === "medium" ? "auto" : "detailed",
+							textVerbosity: effort === "low" ? "low" : "medium",
+						}]),
+					),
+					fast: { serviceTier: "priority" },
+				},
 			} satisfies (typeof models)[string] & { variants: Record<string, unknown> };
 			models["gpt-6-astra"] ??= astra;
 		},
@@ -130,6 +150,7 @@ export const OpenAIAuthPlugin: Plugin = async ({ client }: PluginInput) => {
 			 */
 			async loader(getAuth: () => Promise<Auth>, provider: unknown) {
 				const auth = await getAuth();
+				oauthTransportActive = false;
 
 				// Only handle OAuth auth type, skip API key auth
 				if (auth.type !== "oauth") {
@@ -146,6 +167,7 @@ export const OpenAIAuthPlugin: Plugin = async ({ client }: PluginInput) => {
 					);
 					return {};
 				}
+				oauthTransportActive = true;
 				// Extract user configuration (global + per-model options)
 				const providerConfig = provider as
 					| { options?: Record<string, unknown>; models?: UserConfig["models"] }
@@ -199,6 +221,27 @@ export const OpenAIAuthPlugin: Plugin = async ({ client }: PluginInput) => {
 						// generateText() sends no stream field, streamText() sends stream=true
 						const originalBody = init?.body ? JSON.parse(init.body as string) : {};
 						const isStreaming = originalBody.stream === true;
+						const carriedOptions = originalBody.metadata?.[optionsMetadataKey];
+						if (carriedOptions !== undefined) {
+							const options = typeof carriedOptions === "string" ? JSON.parse(carriedOptions) : null;
+							if (!options || typeof options !== "object" || Array.isArray(options)) {
+								throw new Error("Invalid Codex request options metadata");
+							}
+							for (const key of ["serviceTier", "reasoningEffort", "reasoningSummary"]) {
+								if (options[key] != null && typeof options[key] !== "string") {
+									throw new Error("Invalid Codex request options metadata");
+								}
+							}
+							originalBody.service_tier ??= options.serviceTier;
+							originalBody.reasoning = {
+								effort: options.reasoningEffort,
+								summary: options.reasoningSummary,
+								...originalBody.reasoning,
+							};
+							delete originalBody.metadata[optionsMetadataKey];
+							if (Object.keys(originalBody.metadata).length === 0) delete originalBody.metadata;
+							init = { ...init, body: JSON.stringify(originalBody) };
+						}
 
 						const transformation = await transformRequestForCodex(
 							init,

@@ -466,6 +466,20 @@ export async function transformRequestBody(
 	body.stream = true;
 	body.instructions = codexInstructions;
 
+	// Service tier is independent of reasoning. Codex sends Fast as "priority".
+	const serviceTier = body.service_tier ??
+		body.providerOptions?.openai?.serviceTier ?? modelConfig.serviceTier;
+	if (serviceTier === "fast") {
+		body.service_tier = "priority";
+	} else if (serviceTier === "priority" || serviceTier === "flex" || serviceTier === "auto") {
+		body.service_tier = serviceTier;
+	} else {
+		if (serviceTier !== undefined && serviceTier !== "default") {
+			logWarn("Invalid service tier; using standard service");
+		}
+		delete body.service_tier;
+	}
+
 	// Prompt caching relies on the host providing a stable prompt_cache_key
 	// (OpenCode passes its session identifier). We no longer synthesize one here.
 
